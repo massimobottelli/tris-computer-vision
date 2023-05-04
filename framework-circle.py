@@ -157,6 +157,8 @@ while True:
 
             # check if cell is empty
             check_cell()
+            
+            # portare qui circle e overlay <-----------------
 
     # Display the frame
     cv.imshow("", frame)
