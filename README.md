@@ -1,3 +1,3 @@
 # computer-vision
 
-![computer-vision](public/img/frame.png)
+![computer-vision](public/img/frame.jpeg)
