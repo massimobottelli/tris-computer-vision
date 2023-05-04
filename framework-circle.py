@@ -13,7 +13,8 @@ FRAME_HEIGHT = config['FRAME_HEIGHT']
 FRAME_WIDTH = config['FRAME_WIDTH']
 LINE_COLOR = tuple(config['LINE_COLOR']) # Convert to tuple
 CIRCLE_COLOR = tuple(config['CIRCLE_COLOR']) # Convert to tuple
-OVERLAY_COLOR = tuple(config['OVERLAY_COLOR']) # Convert to tuple
+OVERLAY_COLOR_1 = tuple(config['OVERLAY_COLOR_1']) # Convert to tuple
+OVERLAY_COLOR_2 = tuple(config['OVERLAY_COLOR_2']) # Convert to tuple
 LINE_WEIGHT = config['LINE_WEIGHT']
 CELL_WIDTH = config['CELL_WIDTH']
 CELL_HEIGHT = config['CELL_HEIGHT']
@@ -96,17 +97,20 @@ def check_cell():
     # If the masked area is above a threshold, the cell is considered non-empty
     if mask_percentage > EMPTY_THRESHOLD:
 
-        # Fill the cell with overlay
-        fill_overlay()
-
         # Detect circles
-        detect_circle(cell_mask)
+        circleDetected = detect_circle(cell_mask)
 
+        player = 1 if circleDetected == True else 2
+        # Fill the cell with overlay
+        fill_overlay(player)
 
-def fill_overlay():
+def fill_overlay(player):
     """Fill the cell with overlay"""
+
+    color = OVERLAY_COLOR_1 if player == 1 else OVERLAY_COLOR_2
+
     overlay = frame.copy()
-    cv.rectangle(overlay, (cell_x, cell_y), (cell_x + CELL_WIDTH, cell_y + CELL_HEIGHT), OVERLAY_COLOR, -1)
+    cv.rectangle(overlay, (cell_x, cell_y), (cell_x + CELL_WIDTH, cell_y + CELL_HEIGHT), color, -1)
     alpha = 0.3
     cv.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
@@ -117,10 +121,15 @@ def detect_circle(cell_mask):
                               param2=PARAM2, minRadius=MINRADIUS, maxRadius=MAXRADIUS)
 
     # Draw detected circles on original image
+    circleDetected = False
+
     if circles is not None:
+        circleDetected = True
         circles = np.round(circles[0, :]).astype("int")
         for (origin_x, origin_y, radius) in circles:
             cv.circle(frame, (cell_x + origin_x, cell_y + origin_y), radius, LINE_COLOR, LINE_WEIGHT)
+
+    return circleDetected
 
 
 # Main
