@@ -94,25 +94,7 @@ def check_cell():
     # Compute the percentage of the masked area
     mask_percentage = cv.countNonZero(cell_mask) / (CELL_WIDTH * CELL_HEIGHT)
 
-    # If the masked area is above a threshold, the cell is considered non-empty
-    if mask_percentage > EMPTY_THRESHOLD:
-
-        # Detect circles
-        circleDetected = detect_circle(cell_mask)
-
-        player = 1 if circleDetected == True else 2
-        # Fill the cell with overlay
-        fill_overlay(player)
-
-def fill_overlay(player):
-    """Fill the cell with overlay"""
-
-    color = OVERLAY_COLOR_1 if player == 1 else OVERLAY_COLOR_2
-
-    overlay = frame.copy()
-    cv.rectangle(overlay, (cell_x, cell_y), (cell_x + CELL_WIDTH, cell_y + CELL_HEIGHT), color, -1)
-    alpha = 0.3
-    cv.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+    return cell_mask, mask_percentage
 
 
 def detect_circle(cell_mask):
@@ -132,27 +114,15 @@ def detect_circle(cell_mask):
     return circleDetected
 
 
-def loop(windows_title):
-    """ Loop """
-    # Get frame from webcam
-    frame = get_frame()
+def fill_overlay(player):
+    """Fill the cell with overlay"""
 
-    # Draw reference grid
-    draw_grid()
+    color = OVERLAY_COLOR_1 if player == 1 else OVERLAY_COLOR_2
 
-    # Check each cell if not empty
-    for i in range(NUM_ROWS):
-        for j in range(NUM_COLS):
-
-            # Get the coordinates of the current cell
-            cell_x = MARGIN_X + j * CELL_WIDTH
-            cell_y = MARGIN_Y + i * CELL_HEIGHT
-
-            # check if cell is empty
-            check_cell()
-
-    # Display the frame
-    cv.imshow(windows_title, frame)
+    overlay = frame.copy()
+    cv.rectangle(overlay, (cell_x, cell_y), (cell_x + CELL_WIDTH, cell_y + CELL_HEIGHT), color, -1)
+    alpha = 0.3
+    cv.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
 
 ''' Main code '''
@@ -180,10 +150,12 @@ while True:
             cell_y = MARGIN_Y + i * CELL_HEIGHT
 
             # check if cell is empty
-            check_cell()
+            cell_mask, mask_percentage = check_cell()
+            if mask_percentage > EMPTY_THRESHOLD:
+                fill_overlay(2)
 
     # Display the frame
-    cv.imshow("Detected image", frame)
+    cv.imshow("Align board to reference grid", frame)
 
     # Wait for space bar press
     if cv.waitKey(1) == ord(' '):
@@ -213,12 +185,20 @@ while True:
                 cell_y = MARGIN_Y + i * CELL_HEIGHT
 
                 # check if cell is empty
-                check_cell()
+                cell_mask, mask_percentage = check_cell()
+                if mask_percentage > EMPTY_THRESHOLD:
+                    # Detect circles
+                    circleDetected = detect_circle(cell_mask)
+
+                    player = 1 if circleDetected == True else 2
+                    # Fill the cell with overlay
+                    fill_overlay(player)
 
         # Display the frame
         cv.imshow("Detected image", frame)
 
-    if key == ord('q'):
+    if key == 27:
+        # ESC to quit
         break
 
 # Release the video capture object and close the window
