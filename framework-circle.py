@@ -132,7 +132,30 @@ def detect_circle(cell_mask):
     return circleDetected
 
 
-# Main
+def loop(windows_title):
+    """ Loop """
+    # Get frame from webcam
+    frame = get_frame()
+
+    # Draw reference grid
+    draw_grid()
+
+    # Check each cell if not empty
+    for i in range(NUM_ROWS):
+        for j in range(NUM_COLS):
+
+            # Get the coordinates of the current cell
+            cell_x = MARGIN_X + j * CELL_WIDTH
+            cell_y = MARGIN_Y + i * CELL_HEIGHT
+
+            # check if cell is empty
+            check_cell()
+
+    # Display the frame
+    cv.imshow(windows_title, frame)
+
+
+''' Main code '''
 
 cell_coords = create_coords()
 # Create list to store cells coordinates
@@ -140,6 +163,7 @@ cell_coords = create_coords()
 # Initialize the video capture object
 cap = cv.VideoCapture(0)
 
+# First loop: show video in real-time until space key is pressed
 while True:
     # Get frame from webcam
     frame = get_frame()
@@ -157,19 +181,47 @@ while True:
 
             # check if cell is empty
             check_cell()
-            
-            # portare qui circle e overlay <-----------------
 
     # Display the frame
-    cv.imshow("", frame)
+    cv.imshow("Detected image", frame)
 
     # Wait for space bar press
-    # cv.waitKey(1) == ord(' '):
+    if cv.waitKey(1) == ord(' '):
+        break
 
-    # Exit the loop if the 'q' key is pressed
-    if cv.waitKey(1) == ord('q'):
+# Second loop: wait for space key press to capture image and show, press 'q' key to exit
+while True:
+
+    # get the key pressed
+    key = cv.waitKey(0)
+
+    # check if space key is pressed
+    if key == ord(' '):
+
+        # Get frame from webcam
+        frame = get_frame()
+
+        # Draw reference grid
+        draw_grid()
+
+        # Check each cell if not empty
+        for i in range(NUM_ROWS):
+            for j in range(NUM_COLS):
+
+                # Get the coordinates of the current cell
+                cell_x = MARGIN_X + j * CELL_WIDTH
+                cell_y = MARGIN_Y + i * CELL_HEIGHT
+
+                # check if cell is empty
+                check_cell()
+
+        # Display the frame
+        cv.imshow("Detected image", frame)
+
+    if key == ord('q'):
         break
 
 # Release the video capture object and close the window
 cap.release()
 cv.destroyAllWindows()
+
