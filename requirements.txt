@@ -49,6 +49,7 @@ scikit-image==0.20.0
 scipy==1.10.1
 shapely==2.0.1
 six==1.16.0
+style==1.1.0
 sympy==1.11.1
 tensorboard==1.8.0
 tensorflow @ https://storage.googleapis.com/tensorflow/mac/gpu/tensorflow-0.10.0rc0-py3-none-any.whl#sha256=8b4eb97db1598d56cb4e2368efcfd7246291db6834cbbd662acd8576501005e2
@@ -59,6 +60,7 @@ torch==2.0.0
 torchvision==0.15.1
 tqdm==4.65.0
 typing_extensions==4.5.0
+update==0.0.1
 urllib3==1.26.15
 validators==0.20.0
 Werkzeug==2.3.3
