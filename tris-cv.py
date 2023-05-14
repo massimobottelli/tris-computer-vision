@@ -1,6 +1,3 @@
-# display 3x3 framework to align webcam
-# and detects circles in each frame
-
 import cv2 as cv
 import numpy as np
 import yaml
@@ -11,6 +8,7 @@ with open('config.yaml', 'r') as f:
 # Import configuration parameters
 FRAME_HEIGHT = config['FRAME_HEIGHT']
 FRAME_WIDTH = config['FRAME_WIDTH']
+ROTATE = config['ROTATE']
 LINE_COLOR = tuple(config['LINE_COLOR']) # Convert to tuple
 CIRCLE_COLOR = tuple(config['CIRCLE_COLOR']) # Convert to tuple
 OVERLAY_COLOR_1 = tuple(config['OVERLAY_COLOR_1']) # Convert to tuple
@@ -66,12 +64,51 @@ def get_frame():
     # Resize the image
     frame = cv.resize(frame, (FRAME_HEIGHT, FRAME_WIDTH))
 
-    # Flip the image horizontally and vertically
-    frame = cv.flip(frame, -1)
+    # Rotate the image by 180 degrees
+    if ROTATE == True:
+        frame = cv.flip(frame, -1)
 
     return frame
 
-def draw_grid():
+def detect_corners(frame):
+    # Detect corners of the rectangle
+
+    # Preprocess image: grayscale, blur and threshold
+    gray = cv.cvtColor(frame, cv.COLOR_BGR2GRAY)
+    blurred = cv.bilateralFilter(gray, 30, 75, 100)
+    _, thresh = cv.threshold(blurred, 0, 255, cv.THRESH_OTSU)
+
+    # Find contour
+    contours, _ = cv.findContours(thresh, cv.RETR_EXTERNAL, cv.CHAIN_APPROX_SIMPLE)
+    contour = contours[0]
+
+    # Approximate contour as a rectangle
+    perimeter = cv.arcLength(contour, True)
+    approx = cv.approxPolyDP(contour, 0.05 * perimeter, True)
+
+    # Draw rectangle borders
+    cv.drawContours(frame, [approx], -1, (0, 0, 255), 2)
+
+    # Store the coordinates of the four corners in an array
+    corners = np.zeros((4, 2), dtype=int)
+    for i, vertex in enumerate(approx[:4]):
+        x, y = vertex[0]
+        corners[i] = [x, y]
+
+    return corners
+
+
+def perspective_trasformation(corners):
+    # Perspective trasformation
+    pts1 = np.float32([corners])
+    pts2 = np.float32([[0,FRAME_HEIGHT],[FRAME_WIDTH,FRAME_HEIGHT],[FRAME_WIDTH,0],[0,0]])
+    matrix = cv.getPerspectiveTransform(pts1,pts2)
+    dst = cv.warpPerspective(frame, matrix, (FRAME_WIDTH,FRAME_HEIGHT))
+
+    return dst
+
+
+def draw_grid(frame):
     """ Draw reference grid """
     for i, coord in enumerate(cell_coords):
         if i % 2 == 0:
@@ -80,11 +117,11 @@ def draw_grid():
             cv.line(frame, point1, point2, LINE_COLOR, LINE_WEIGHT, cv.LINE_AA)
 
 
-def check_cell(cell_x, cell_y):
+def check_cell(img, cell_x, cell_y):
     """Check each cell if not empty"""
 
     # Extract the region of interest (ROI) of current cell
-    cell_roi = frame[cell_y:cell_y + CELL_HEIGHT, cell_x:cell_x + CELL_WIDTH]
+    cell_roi = img[cell_y:cell_y + CELL_HEIGHT, cell_x:cell_x + CELL_WIDTH]
 
     # Convert the ROI to grayscale
     cell_gray = cv.cvtColor(cell_roi, cv.COLOR_BGR2GRAY)
@@ -98,7 +135,7 @@ def check_cell(cell_x, cell_y):
     return cell_mask, mask_percentage
 
 
-def detect_circle(cell_mask):
+def detect_circle(img, cell_mask):
     """Detect circles"""
     circles = cv.HoughCircles(cell_mask, cv.HOUGH_GRADIENT, dp=1, minDist=MINDIST, param1=PARAM1,
                               param2=PARAM2, minRadius=MINRADIUS, maxRadius=MAXRADIUS)
@@ -110,20 +147,20 @@ def detect_circle(cell_mask):
         circleDetected = True
         circles = np.round(circles[0, :]).astype("int")
         for (origin_x, origin_y, radius) in circles:
-            cv.circle(frame, (cell_x + origin_x, cell_y + origin_y), radius, LINE_COLOR, LINE_WEIGHT)
+            cv.circle(img, (cell_x + origin_x, cell_y + origin_y), radius, LINE_COLOR, LINE_WEIGHT)
 
     return circleDetected
 
 
-def fill_overlay(symbol):
+def fill_overlay(img, symbol):
     """Fill the cell with overlay"""
 
     color = OVERLAY_COLOR_1 if symbol == 1 else OVERLAY_COLOR_2
 
-    overlay = frame.copy()
+    overlay = img.copy()
     cv.rectangle(overlay, (cell_x, cell_y), (cell_x + CELL_WIDTH, cell_y + CELL_HEIGHT), color, -1)
     alpha = 0.3
-    cv.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+    cv.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
 
 
 ''' Main code '''
@@ -134,14 +171,20 @@ cell_coords = create_coords()
 # Initialize the video capture object
 cap = cv.VideoCapture(0)
 
-# First loop: show video in real-time until space key is pressed
+# Main loop
 while True:
 
     # Get frame from webcam
     frame = get_frame()
 
+    # Detect corners
+    corners = detect_corners(frame)
+
+    # Adjust perspective
+    board = perspective_trasformation(corners)
+
     # Draw reference grid
-    draw_grid()
+    draw_grid(board)
 
     # Check each cell if not empty
     for i in range(NUM_ROWS):
@@ -152,60 +195,31 @@ while True:
             cell_y = MARGIN_Y + i * CELL_HEIGHT
 
             # check if cell is empty
-            cell_mask, mask_percentage = check_cell(cell_x, cell_y)
+            cell_mask, mask_percentage = check_cell(board, cell_x, cell_y)
 
-            # if cell is not empty, show overlay
+            # if cell is not empty, detect circle and show overlay
             if mask_percentage > EMPTY_THRESHOLD:
-                fill_overlay(2)
+                # Detect circles
+                circleDetected = detect_circle(board, cell_mask)
+                symbol = 1 if circleDetected == True else 2
 
-    # Display the frame
-    cv.imshow("Align board to reference grid", frame)
+                # Fill the cell with overlay
+                fill_overlay(board, symbol)
 
-    # Wait for space bar press
-    if cv.waitKey(1) == ord(' '):
-        break
+    # Display the windows
 
-# Second loop: wait for space key press to capture image and show, press ESC key to exit
-while True:
+    # Create a blank canvas to combine the images
+    canvas = np.zeros((FRAME_HEIGHT * 2, FRAME_WIDTH, 3), dtype=np.uint8)
+    canvas[:FRAME_HEIGHT, :] = frame
+    canvas[FRAME_HEIGHT:, :] = board
+    cv.imshow("Board", canvas)
 
-    # get the key pressed
-    key = cv.waitKey(0)
+    # Display the windows
+    # cv.imshow("Webcam", frame)
+    # cv.imshow("Board", board)
 
-    # check if space key is pressed
-    if key == ord(' '):
-
-        # Get frame from webcam
-        frame = get_frame()
-
-        # Draw reference grid
-        draw_grid()
-
-        # Check each cell if not empty
-        for i in range(NUM_ROWS):
-            for j in range(NUM_COLS):
-
-                # Get the coordinates of the current cell
-                cell_x = MARGIN_X + j * CELL_WIDTH
-                cell_y = MARGIN_Y + i * CELL_HEIGHT
-
-                # check if cell is empty
-                cell_mask, mask_percentage = check_cell(cell_x, cell_y)
-
-                # if cell is not empty, detect circle and show overlay
-                if mask_percentage > EMPTY_THRESHOLD:
-
-                    # Detect circles
-                    circleDetected = detect_circle(cell_mask)
-                    symbol = 1 if circleDetected == True else 2
-
-                    # Fill the cell with overlay
-                    fill_overlay(symbol)
-
-        # Display the frame
-        cv.imshow("Detected image", frame)
-
-    if key == 27:
-        # ESC to quit
+    # get the key pressed to loop
+    if cv.waitKey(1) == 27:
         break
 
 # Release the video capture object and close the window

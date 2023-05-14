@@ -1,19 +1,22 @@
 # Parameters for framework
-FRAME_HEIGHT: 400
-FRAME_WIDTH: 400
+FRAME_HEIGHT: 300
+FRAME_WIDTH: 300
+ROTATE: False
+
 LINE_WEIGHT: 3
 CELL_WIDTH: 100
 CELL_HEIGHT: 100
-MARGIN_X: 50
-MARGIN_Y: 60
+MARGIN_X: 0
+MARGIN_Y: 0
 NUM_ROWS: 3
 NUM_COLS: 3
-EMPTY_THRESHOLD: 0.15
+EMPTY_THRESHOLD: 0.14
 
 # Colors
 LINE_COLOR: [0, 0, 255] # Red
 CIRCLE_COLOR: [255, 0, 0] # Blue
-OVERLAY_COLOR: [0, 255, 0] # Green
+OVERLAY_COLOR_1: [0, 255, 0] # Green
+OVERLAY_COLOR_2: [0, 0, 255] # Red
 
 # Parameters for circle detection using Hough transform
 MINDIST: 40 # Minimum distance between the centers
