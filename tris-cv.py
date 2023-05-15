@@ -6,16 +6,16 @@ with open('config.yaml', 'r') as f:
     config = yaml.safe_load(f)
 
 # Import configuration parameters
-FRAME_HEIGHT = config['FRAME_HEIGHT']
 FRAME_WIDTH = config['FRAME_WIDTH']
+FRAME_HEIGHT = config['FRAME_HEIGHT']
 ROTATE = config['ROTATE']
-LINE_COLOR = tuple(config['LINE_COLOR']) # Convert to tuple
-CIRCLE_COLOR = tuple(config['CIRCLE_COLOR']) # Convert to tuple
-OVERLAY_COLOR_1 = tuple(config['OVERLAY_COLOR_1']) # Convert to tuple
-OVERLAY_COLOR_2 = tuple(config['OVERLAY_COLOR_2']) # Convert to tuple
+LINE_COLOR = tuple(config['LINE_COLOR'])
+CIRCLE_COLOR = tuple(config['CIRCLE_COLOR'])
+OVERLAY_COLOR_1 = tuple(config['OVERLAY_COLOR_1'])
+OVERLAY_COLOR_2 = tuple(config['OVERLAY_COLOR_2'])
 LINE_WEIGHT = config['LINE_WEIGHT']
-CELL_WIDTH = config['CELL_WIDTH']
-CELL_HEIGHT = config['CELL_HEIGHT']
+CELL_WIDTH = int (FRAME_WIDTH / 3)
+CELL_HEIGHT = int (FRAME_HEIGHT / 3)
 MARGIN_X = config['MARGIN_X']
 MARGIN_Y = config['MARGIN_Y']
 NUM_ROWS = config['NUM_ROWS']
@@ -65,10 +65,11 @@ def get_frame():
     frame = cv.resize(frame, (FRAME_HEIGHT, FRAME_WIDTH))
 
     # Rotate the image by 180 degrees
-    if ROTATE == True:
+    if ROTATE is True:
         frame = cv.flip(frame, -1)
 
     return frame
+
 
 def detect_corners(frame):
     # Detect corners of the rectangle
@@ -101,9 +102,9 @@ def detect_corners(frame):
 def perspective_trasformation(corners):
     # Perspective trasformation
     pts1 = np.float32([corners])
-    pts2 = np.float32([[0,FRAME_HEIGHT],[FRAME_WIDTH,FRAME_HEIGHT],[FRAME_WIDTH,0],[0,0]])
-    matrix = cv.getPerspectiveTransform(pts1,pts2)
-    dst = cv.warpPerspective(frame, matrix, (FRAME_WIDTH,FRAME_HEIGHT))
+    pts2 = np.float32([[FRAME_WIDTH, FRAME_HEIGHT], [FRAME_WIDTH, 0], [0, 0], [0, FRAME_HEIGHT]])
+    matrix = cv.getPerspectiveTransform(pts1, pts2)
+    dst = cv.warpPerspective(frame, matrix, (FRAME_WIDTH, FRAME_HEIGHT))
 
     return dst
 
@@ -171,6 +172,7 @@ cell_coords = create_coords()
 # Initialize the video capture object
 cap = cv.VideoCapture(0)
 
+
 # Main loop
 while True:
 
@@ -201,7 +203,7 @@ while True:
             if mask_percentage > EMPTY_THRESHOLD:
                 # Detect circles
                 circleDetected = detect_circle(board, cell_mask)
-                symbol = 1 if circleDetected == True else 2
+                symbol = 1 if circleDetected is True else 2
 
                 # Fill the cell with overlay
                 fill_overlay(board, symbol)
@@ -219,10 +221,9 @@ while True:
     # cv.imshow("Board", board)
 
     # get the key pressed to loop
-    if cv.waitKey(1) == 27:
+    if cv.waitKey(0) == 27:
         break
 
 # Release the video capture object and close the window
 cap.release()
 cv.destroyAllWindows()
-
