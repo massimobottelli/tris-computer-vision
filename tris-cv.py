@@ -176,6 +176,9 @@ cap = cv.VideoCapture(0)
 # Main loop
 while True:
 
+    # Empty board
+    board_symbol = [["", "", ""] for i in range(3)]
+
     # Get frame from webcam
     frame = get_frame()
 
@@ -196,17 +199,41 @@ while True:
             cell_x = MARGIN_X + j * CELL_WIDTH
             cell_y = MARGIN_Y + i * CELL_HEIGHT
 
-            # check if cell is empty
+            # calculate mask percentage
             cell_mask, mask_percentage = check_cell(board, cell_x, cell_y)
 
             # if cell is not empty, detect circle and show overlay
             if mask_percentage > EMPTY_THRESHOLD:
+
                 # Detect circles
                 circleDetected = detect_circle(board, cell_mask)
-                symbol = 1 if circleDetected is True else 2
 
-                # Fill the cell with overlay
-                fill_overlay(board, symbol)
+
+                if circleDetected is True:
+
+                    # add O symbol to the board
+                    board_symbol[i][j] = "O"
+
+                    # Fill the cell with overlay color 1
+                    fill_overlay(board, 1)
+
+                else:
+                    # add X symbol to the board
+                    board_symbol[i][j] = "X"
+
+                    # Fill the cell with overlay color 2
+                    fill_overlay(board, 2)
+
+            else:
+                # if empty is cell
+                board_symbol [i][j] = " "
+
+    # Print the board to the console
+    for row in board_symbol:
+        for element in row:
+            print(element, end=' ')
+        print()
+    print("------")
 
     # Display the windows
 
