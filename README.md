@@ -1,6 +1,6 @@
 # Tris with computer vision
 
-![computer-vision](public/img/frame-230515.jpeg)
+![computer-vision](public/img/tcv.jpeg)
 
 In this code, `create_coords()` function creates a list of coordinates for each cell in a 3x3 grid based on the configuration parameters defined in the `config.yaml` file. The list is then used in `draw_grid()` function to draw a reference grid on the video frame. The grid is used to align the webcam so that each cell is in the correct position.
 
