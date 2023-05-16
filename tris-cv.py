@@ -1,6 +1,7 @@
 import cv2 as cv
 import numpy as np
 import yaml
+import random
 
 with open('config.yaml', 'r') as f:
     config = yaml.safe_load(f)
@@ -17,6 +18,7 @@ CELL_HEIGHT = int (FRAME_HEIGHT / 3)
 CIRCLE_COLOR = tuple(config['CIRCLE_COLOR'])
 OVERLAY_COLOR_1 = tuple(config['OVERLAY_COLOR_1'])
 OVERLAY_COLOR_2 = tuple(config['OVERLAY_COLOR_2'])
+OVERLAY_COLOR_3 = tuple(config['OVERLAY_COLOR_3'])
 LINE_COLOR = tuple(config['LINE_COLOR'])
 LINE_WEIGHT = config['LINE_WEIGHT']
 
@@ -116,8 +118,10 @@ def draw_grid(frame):
             cv.line(frame, point1, point2, LINE_COLOR, LINE_WEIGHT, cv.LINE_AA)
 
 
-def check_cell(img, cell_x, cell_y):
+def check_cell(img, j, i):
     """Check each cell if not empty"""
+    cell_x = j * CELL_WIDTH
+    cell_y = i * CELL_HEIGHT
 
     # Extract the region of interest (ROI) of current cell
     cell_roi = img[cell_y:cell_y + CELL_HEIGHT, cell_x:cell_x + CELL_WIDTH]
@@ -134,8 +138,12 @@ def check_cell(img, cell_x, cell_y):
     return cell_mask, mask_percentage
 
 
-def detect_circle(img, cell_mask):
+def detect_circle(img, j, i, cell_mask):
     """Detect circles"""
+
+    cell_x = j * CELL_WIDTH
+    cell_y = i * CELL_HEIGHT
+
     circles = cv.HoughCircles(cell_mask, cv.HOUGH_GRADIENT, dp=1, minDist=MINDIST, param1=PARAM1,
                               param2=PARAM2, minRadius=MINRADIUS, maxRadius=MAXRADIUS)
 
@@ -151,18 +159,105 @@ def detect_circle(img, cell_mask):
     return circleDetected
 
 
-def fill_overlay(img, symbol):
+def fill_overlay(img, j, i, symbol):
     """Fill the cell with overlay"""
 
-    color = OVERLAY_COLOR_1 if symbol == 1 else OVERLAY_COLOR_2
+    cell_x = j * CELL_WIDTH
+    cell_y = i * CELL_HEIGHT
 
+    if symbol == 1:
+        color = OVERLAY_COLOR_1
+
+    if symbol == 2:
+        color = OVERLAY_COLOR_2
+
+    if symbol == 3:
+        color = OVERLAY_COLOR_3
+
+    alpha = 0.4
     overlay = img.copy()
     cv.rectangle(overlay, (cell_x, cell_y), (cell_x + CELL_WIDTH, cell_y + CELL_HEIGHT), color, -1)
-    alpha = 0.3
     cv.addWeighted(overlay, alpha, img, 1 - alpha, 0, img)
 
 
-''' Main code '''
+def computer_move(board):
+
+    # Find winning move
+    move = find_winning_move(board, COMPUTER_PLAYER)
+
+    if move is None:
+        # Find blocking move
+        move = find_winning_move(board, HUMAN_PLAYER)
+
+    if move is None:
+        while True:
+            i = random.randint(0, NUM_ROWS - 1)
+            j = random.randint(0, NUM_COLS - 1)
+            move = [i,j]
+            if board[i][j] == 1:
+                break
+
+    return move
+
+
+def find_winning_move(values, player):
+    check = player ** 2
+    row_product = [1] * 3
+    col_product = [1] * 3
+    diagonal1_product = 1
+    diagonal2_product = 1
+
+    for i in range(3):
+        for j in range(3):
+            row_product[i] *= values[i][j]
+            col_product[j] *= values[i][j]
+            if i == j:
+                diagonal1_product *= values[i][j]
+            if i + j == 2:
+                diagonal2_product *= values[i][j]
+
+    if check in row_product:
+        row = row_product.index(check)
+        for col in range(3):
+            if values[row][col] == 1:
+                return (row, col)
+    elif check in col_product:
+        col = col_product.index(check)
+        for row in range(3):
+            if values[row][col] == 1:
+                return (row, col)
+    elif diagonal1_product == check:
+        for i in range(3):
+            if values[i][i] == 1:
+                return (i, i)
+    elif diagonal2_product == check:
+        for i in range(3):
+            if values[i][2-i] == 1:
+                return (i, 2-i)
+    else:
+        return None
+
+
+def check_winner(board):
+    winners = []
+    for i in range(3):
+        if board[i][0] == board[i][1] == board[i][2] and board[i][0] != 1:
+            return ([i, 0], [i, 1], [i, 2])
+
+        if board[0][i] == board[1][i] == board[2][i] and board[0][i] != 1:
+            return ([0, i], [1, i], [2, i])
+
+    if board[0][0] == board[1][1] == board[2][2] and board[0][0] != 1:
+        return ([0, 0], [1, 1], [2, 2])
+
+    if board[0][2] == board[1][1] == board[2][0] and board[0][2] != 1:
+        return ([0, 2], [1, 1], [2, 0])
+
+    return None
+
+''' Main '''
+
+turn = HUMAN_PLAYER
 
 # Create list to store cells coordinates
 cell_coords = create_coords()
@@ -170,12 +265,8 @@ cell_coords = create_coords()
 # Initialize the video capture object
 cap = cv.VideoCapture(0)
 
-
 # Main loop
 while True:
-
-    # Empty numeric board
-    numeric_board = [[1, 1, 1] for i in range(3)]
 
     # Get frame from webcam
     frame = get_frame()
@@ -183,28 +274,27 @@ while True:
     # Detect corners
     corners = detect_corners(frame)
 
-    # Adjust  perspective
+    # Adjust perspective
     board = perspective_trasformation(corners)
 
     # Draw reference grid
     draw_grid(board)
 
+    # Empty numeric board
+    numeric_board = [[1, 1, 1] for i in range(NUM_ROWS)]
+
     # Check each cell
     for i in range(NUM_ROWS):
         for j in range(NUM_COLS):
 
-            # Get cell coordinates
-            cell_x = j * CELL_WIDTH
-            cell_y = i * CELL_HEIGHT
-
             # calculate mask percentage
-            cell_mask, mask_percentage = check_cell(board, cell_x, cell_y)
+            cell_mask, mask_percentage = check_cell(board, j, i)
 
             # if cell is not empty, detect circle and show overlay
             if mask_percentage > EMPTY_THRESHOLD:
 
                 # Detect circles
-                circleDetected = detect_circle(board, cell_mask)
+                circleDetected = detect_circle(board, j, i, cell_mask)
 
                 if circleDetected is True:
 
@@ -212,14 +302,14 @@ while True:
                     numeric_board[i][j] = HUMAN_PLAYER
 
                     # Fill the cell with overlay color 1
-                    fill_overlay(board, 1)
+                    fill_overlay(board, j, i, 1)
 
                 else:
                     # add COMPUTER PLAYER value to numeric board
                     numeric_board[i][j] = COMPUTER_PLAYER
 
                     # Fill the cell with overlay color 2
-                    fill_overlay(board, 2)
+                    fill_overlay(board, j, i, 2)
 
     # Print the board to the console
     for row in numeric_board:
@@ -228,6 +318,36 @@ while True:
         print()
     print("------")
 
+    # Check if there is a winner
+    winning_cells = check_winner(numeric_board)
+    if winning_cells is not None:
+
+        print (winning_cells)
+        i,j = winning_cells[0]
+        if numeric_board[i][j] == HUMAN_PLAYER:
+            print ("You win!")
+        else:
+            print ("Computer wins!")
+
+        # Highlight winning cells
+        for coord in winning_cells:
+            x, y = coord
+            fill_overlay(board, y, x, 3)
+
+    else:
+
+        if turn == COMPUTER_PLAYER:
+            # Computer move
+            best_move = computer_move(numeric_board)
+            print (best_move)
+
+            # Draw X in best move cell
+            center_x = (best_move[1] * CELL_WIDTH) + (CELL_WIDTH // 2)
+            center_y = (best_move[0] * CELL_HEIGHT) + (CELL_HEIGHT // 2)
+            cv.line(board, (center_x - 40, center_y - 40), (center_x + 40, center_y + 40), LINE_COLOR, LINE_WEIGHT * 2)
+            cv.line(board, (center_x + 40, center_y - 40), (center_x - 40, center_y + 40), LINE_COLOR, LINE_WEIGHT * 2)
+
+    turn = COMPUTER_PLAYER if turn == HUMAN_PLAYER else HUMAN_PLAYER
     # Display the windows
 
     # Create a blank canvas to combine the images
@@ -235,10 +355,6 @@ while True:
     canvas[:FRAME_HEIGHT, :] = frame
     canvas[FRAME_HEIGHT:, :] = board
     cv.imshow("Board", canvas)
-
-    # Display the windows
-    # cv.imshow("Webcam", frame)
-    # cv.imshow("Board", board)
 
     # get the key pressed to loop
     if cv.waitKey(0) == 27:

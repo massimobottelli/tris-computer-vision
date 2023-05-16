@@ -6,8 +6,9 @@ NUM_COLS: 3
 
 # Board Colors and line size
 CIRCLE_COLOR: [255, 0, 0] # Blue
-OVERLAY_COLOR_1: [0, 255, 0] # Green
-OVERLAY_COLOR_2: [0, 0, 255] # Red
+OVERLAY_COLOR_1: [0, 255, 255] # Light blue
+OVERLAY_COLOR_2: [255, 255, 0] # Yellow
+OVERLAY_COLOR_3: [0, 0, 255] # Red
 LINE_COLOR: [0, 0, 255] # Red
 LINE_WEIGHT: 3
 
