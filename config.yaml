@@ -1,24 +1,26 @@
 # Parameters for framework
 FRAME_HEIGHT: 500
 FRAME_WIDTH: 500
-ROTATE: False
-
-LINE_WEIGHT: 3
-MARGIN_X: 0
-MARGIN_Y: 0
 NUM_ROWS: 3
 NUM_COLS: 3
-EMPTY_THRESHOLD: 0.14
 
-# Colors
-LINE_COLOR: [0, 0, 255] # Red
+# Board Colors and line size
 CIRCLE_COLOR: [255, 0, 0] # Blue
 OVERLAY_COLOR_1: [0, 255, 0] # Green
 OVERLAY_COLOR_2: [0, 0, 255] # Red
+LINE_COLOR: [0, 0, 255] # Red
+LINE_WEIGHT: 3
 
-# Parameters for circle detection using Hough transform
+# Parameters for cell detection
+EMPTY_THRESHOLD: 0.14
+
+# Parameters for circle detection
 MINDIST: 40 # Minimum distance between the centers
 PARAM1: 20 # Edge detection threshold
 PARAM2: 20 # Circle detection threshold
 MINRADIUS: 10 # Minimum radius
 MAXRADIUS: 60 # Maximum radius
+
+# Values for numeric board
+HUMAN_PLAYER: 3
+COMPUTER_PLAYER: 5

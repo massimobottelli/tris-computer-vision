@@ -8,18 +8,18 @@ with open('config.yaml', 'r') as f:
 # Import configuration parameters
 FRAME_WIDTH = config['FRAME_WIDTH']
 FRAME_HEIGHT = config['FRAME_HEIGHT']
-ROTATE = config['ROTATE']
-LINE_COLOR = tuple(config['LINE_COLOR'])
+NUM_ROWS = config['NUM_ROWS']
+NUM_COLS = config['NUM_COLS']
+
+CELL_WIDTH = int (FRAME_WIDTH / 3)
+CELL_HEIGHT = int (FRAME_HEIGHT / 3)
+
 CIRCLE_COLOR = tuple(config['CIRCLE_COLOR'])
 OVERLAY_COLOR_1 = tuple(config['OVERLAY_COLOR_1'])
 OVERLAY_COLOR_2 = tuple(config['OVERLAY_COLOR_2'])
+LINE_COLOR = tuple(config['LINE_COLOR'])
 LINE_WEIGHT = config['LINE_WEIGHT']
-CELL_WIDTH = int (FRAME_WIDTH / 3)
-CELL_HEIGHT = int (FRAME_HEIGHT / 3)
-MARGIN_X = config['MARGIN_X']
-MARGIN_Y = config['MARGIN_Y']
-NUM_ROWS = config['NUM_ROWS']
-NUM_COLS = config['NUM_COLS']
+
 EMPTY_THRESHOLD = config['EMPTY_THRESHOLD']
 MINDIST = config['MINDIST']
 PARAM1 = config['PARAM1']
@@ -27,6 +27,8 @@ PARAM2 = config['PARAM2']
 MINRADIUS = config['MINRADIUS']
 MAXRADIUS = config['MAXRADIUS']
 
+HUMAN_PLAYER = config['HUMAN_PLAYER']
+COMPUTER_PLAYER = config['COMPUTER_PLAYER']
 
 def create_coords():
     """Create list to store cells coordinates"""
@@ -34,17 +36,17 @@ def create_coords():
     for i in range(NUM_ROWS):
         for j in range(NUM_COLS + 1):
             # calculate x and y coordinates of the top-left corner of the cell
-            x = MARGIN_X + j * CELL_WIDTH
-            y = MARGIN_Y + i * CELL_HEIGHT
+            x = j * CELL_WIDTH
+            y = i * CELL_HEIGHT
             # add coordinates of the top and bottom of the cell
             cell_coords.append((x, y))
             cell_coords.append((x, y + CELL_HEIGHT))
         # add coordinates of the left and right edges of the row
-        cell_coords.append((MARGIN_X, MARGIN_Y + i * CELL_HEIGHT))
-        cell_coords.append((MARGIN_X + NUM_COLS * CELL_WIDTH, MARGIN_Y + i * CELL_HEIGHT))
+        cell_coords.append((0, i * CELL_HEIGHT))
+        cell_coords.append((NUM_COLS * CELL_WIDTH, i * CELL_HEIGHT))
     # Add coordinates of the bottom edge of the grid
-    cell_coords.append((MARGIN_X, MARGIN_Y + NUM_ROWS * CELL_HEIGHT))
-    cell_coords.append((MARGIN_X + NUM_COLS * CELL_WIDTH, MARGIN_Y + NUM_ROWS * CELL_HEIGHT))
+    cell_coords.append((0, NUM_ROWS * CELL_HEIGHT))
+    cell_coords.append((NUM_COLS * CELL_WIDTH, NUM_ROWS * CELL_HEIGHT))
     return cell_coords
 
 
@@ -63,10 +65,6 @@ def get_frame():
 
     # Resize the image
     frame = cv.resize(frame, (FRAME_HEIGHT, FRAME_WIDTH))
-
-    # Rotate the image by 180 degrees
-    if ROTATE is True:
-        frame = cv.flip(frame, -1)
 
     return frame
 
@@ -176,8 +174,8 @@ cap = cv.VideoCapture(0)
 # Main loop
 while True:
 
-    # Empty board
-    board_symbol = [["", "", ""] for i in range(3)]
+    # Empty numeric board
+    numeric_board = [[1, 1, 1] for i in range(3)]
 
     # Get frame from webcam
     frame = get_frame()
@@ -185,19 +183,19 @@ while True:
     # Detect corners
     corners = detect_corners(frame)
 
-    # Adjust perspective
+    # Adjust  perspective
     board = perspective_trasformation(corners)
 
     # Draw reference grid
     draw_grid(board)
 
-    # Check each cell if not empty
+    # Check each cell
     for i in range(NUM_ROWS):
         for j in range(NUM_COLS):
 
-            # Get the coordinates of the current cell
-            cell_x = MARGIN_X + j * CELL_WIDTH
-            cell_y = MARGIN_Y + i * CELL_HEIGHT
+            # Get cell coordinates
+            cell_x = j * CELL_WIDTH
+            cell_y = i * CELL_HEIGHT
 
             # calculate mask percentage
             cell_mask, mask_percentage = check_cell(board, cell_x, cell_y)
@@ -208,28 +206,23 @@ while True:
                 # Detect circles
                 circleDetected = detect_circle(board, cell_mask)
 
-
                 if circleDetected is True:
 
-                    # add O symbol to the board
-                    board_symbol[i][j] = "O"
+                    # add HUMAN PLAYER value to numeric board
+                    numeric_board[i][j] = HUMAN_PLAYER
 
                     # Fill the cell with overlay color 1
                     fill_overlay(board, 1)
 
                 else:
-                    # add X symbol to the board
-                    board_symbol[i][j] = "X"
+                    # add COMPUTER PLAYER value to numeric board
+                    numeric_board[i][j] = COMPUTER_PLAYER
 
                     # Fill the cell with overlay color 2
                     fill_overlay(board, 2)
 
-            else:
-                # if empty is cell
-                board_symbol [i][j] = " "
-
     # Print the board to the console
-    for row in board_symbol:
+    for row in numeric_board:
         for element in row:
             print(element, end=' ')
         print()
