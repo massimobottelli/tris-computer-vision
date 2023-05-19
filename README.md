@@ -4,9 +4,29 @@
 | :--: |
 |*Click to Watch video of Tris with Computer Vision* |
 
+## Project Description
+
 This project implements a hybrid Tic Tac Toe game mode, combining the physical medium of pen and paper with a computer vision system. 
 
-By capturing the image of the physical board with a webcam, the software is able to recognise the symbols drawn by the player and respond to human moves.
+I used Python and OpenCV to capture the image of the physical board with a webcam, recognise the symbols drawn by the player and respond to human moves.
+
+Creating the workflow for processing the image was pretty challenging, but the result is reliable and effective!
+
+## How to install and run
+
+You need to have a Python interpreter on your computer and a webcam.
+
+Clone the repository:
+
+`git clone https://github.com/massimobottelli/tris-computer-vision.git`
+ 
+Install the dependencies
+
+`pip install -r requirements.txt`
+ 
+Then launch the script:
+
+`python tris-cv.py`
 
 ## How to play
 
@@ -16,7 +36,7 @@ At each turn, the human player draws the symbol (O) and clicks a key on the keyb
 
 The computer captures the board image from the webcam, analyses it and responds with its move by placing the symbol (X) on the window on the screen.
 
-The human player must manually draw the X on the board in the cell displayed by the computer (I plan to improve the design by creating a robot arm to allow the computer to draw its own symbol).
+The human player must manually draw the X on the board in the cell displayed by the computer.
 
 The game ends when a player places three of his symbols in a row, in a column or diagonally.
 
@@ -40,3 +60,7 @@ If there is no winner, the software evaluates the best move for the computer pla
 - if there are two symbols (X) of the computer player on a line, it responds with the winning move to complete the line of three
 - if there are two human player symbols (O) on a line, it responds with the blocking move to prevent the human player from winning
 - if there is neither the winning move nor the blocking move, he responds with a random move on any empty cell
+
+## Next steps
+
+I plan to improve the project by creating a robot arm to allow the computer to draw its own symbol.
