@@ -1,4 +1,4 @@
-# Tris with computer vision
+# Tris with Computer Vision
 
 ![computer-vision](public/img/tcv.jpeg)
 
