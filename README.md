@@ -1,6 +1,8 @@
 # Tris with Computer Vision
 
 ![computer-vision](public/img/tcv.jpeg)
+[![Watch video of Tris with Computer Vision](public/img/tcv.jpeg)](https://youtu.be/p7Hc7n9j3e0)
+
 
 This project implements a hybrid Tic Tac Toe game mode, combining the physical medium of pen and paper with a computer vision system. 
 
