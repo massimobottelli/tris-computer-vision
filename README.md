@@ -63,4 +63,4 @@ If there is no winner, the software evaluates the best move for the computer pla
 
 ## Next steps
 
-I plan to improve the project by creating a robot arm to allow the computer to draw its own symbol.
+I plan to improve the project by creating a [Robot Arm](https://github.com/massimobottelli/robot-arm/) to allow the computer to draw its own symbol.
